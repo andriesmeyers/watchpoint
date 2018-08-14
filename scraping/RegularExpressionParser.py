@@ -9,25 +9,43 @@ from http.client import HTTPConnection
 from http.client import HTTPSConnection
 import HttpHandler
 import Proxy 
+from bs4 import BeautifulSoup
 class RegularExpressionParser():
     def GetParseData(self,strResponse):
             try:
-                ObjDbOpertions=DBOperation.DBOperation()
                 ObjStringUtil=StringHelper.StringHelper()
-                HttpRequest=HttpHandler.HttpHandler()
-                #objResponse=json.loads(str(strResponse))
-                dicFinalData=[]
-                KrePrice=0
-
+                
+                document = BeautifulSoup(strResponse, 'html.parser')
                 ProductName = ObjStringUtil.GetStringResult(strResponse, r"<title>(?P<value>[\s\S]*?)</title>", 0);
                 ProductName=str.replace(ProductName,"bol.com |","")
                 EAN = ObjStringUtil.GetStringResult(strResponse, r"data-ean=\"(?P<value>[\s\S]*?)\"", 0);
                 Price = ObjStringUtil.GetStringResult(strResponse, r"\"price\":(?P<value>[\s\S]*?),\"", 1);
-                #dicData=(str(ProductName),str(EAN),str(Price) ) 
-
+                ImageURL = ObjStringUtil.GetStringResult(strResponse, r"data-zoom-src=\"(?P<value>[\s\S]*?)\"", 0);
+                
+                Categories = document.findAll("li", {"class": "specs__category"})
+                # Get Price from Krëfel
                 KreFelPrice=self.MatchBolwithKrefel(ProductName)
+
+                # Get Price from Megekko
+
                 MegekkoPrice=self.MatchBolwithMegekko(ProductName)
-                dicData=(str(ProductName),str(EAN),str(Price),str(KreFelPrice),str(MegekkoPrice) ) 
+                dicData = { 
+                    'ProductName': ProductName,
+                    'EAN': EAN,
+                    'BolPrice': Price, 
+                    'KrefelPrice': KreFelPrice,
+                    'MegekkoPrice': MegekkoPrice, 
+                    'ImageURL': ImageURL,
+                    'Categories': Categories
+                }
+                # dicData=(
+                #     str(ProductName),
+                #     str(EAN),
+                #     str(Price),
+                #     str(KreFelPrice),
+                #     str(MegekkoPrice), 
+                #     Categories,
+                # ) 
 
                 return dicData
 
@@ -121,13 +139,14 @@ class RegularExpressionParser():
                         break;
                     else:
                         i=0
+                        threshold = 90
                         keywords=re.split(r'\s',Title)
                         length=len(keywords)
                         for key in keywords:
                             if key in ProductName:
                                 i=i+1
                         #Assuming if 60% words are matched then product is matched.
-                        if 100*i/length>80:
+                        if 100*i/length>threshold:
                             match=True
                             break;
                 if match:            

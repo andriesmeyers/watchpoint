@@ -13,11 +13,11 @@ class DBOperation():
         try:
             cnx = mysql.connector.connect(user='root', password='secret', host='127.0.0.1', database='watchpoint',use_pure=False)
             cursor = cnx.cursor()
-            add_Query = ("INSERT INTO PriceComparisonBetweenSites "
+            query = ("INSERT INTO PriceComparisonBetweenSites "
                "(Title, EAN, Price,KreFelPrice,MegekkoPrice) "
-               "VALUES (%s, %s, %s, %s, %s)")
-            Insert_data=dicData
-            cursor.execute(add_Query, Insert_data)
+               "VALUES (%s, %s, %s, %s, %s)" % (dicData['ProductName'], dicData['EAN'], dicData['BolPrice'], dicData['KrefelPrice'], dicData['MegekkoPrice'])
+            )
+            cursor.execute(query)
             cnx.commit()
             cursor.close()
             cnx.close()

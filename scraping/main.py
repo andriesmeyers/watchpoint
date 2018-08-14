@@ -75,42 +75,51 @@ try:
             ProductCount= ObjStringUtil.GetStringResult(response[0], r"<p\s*class=\"total-results js_total_results\"\s*data-test=\"number-of-articles\">(?P<value>[\s\S]*?)</p>", 0);
             ProductCount=(str).replace(ProductCount,"resultaten","").strip()
             
-            # Loop product urls
-            for productURL in ProductURLs:
-                    # Concat URL
-                    itemURL="https://www.bol.com" + str(productURL)
-                    itemURL=str.replace(itemURL,"&amp;","&")
-                    itemURL=str.replace(itemURL,"&#x3D;","=")
+            # # Loop product urls
+            # for productURL in ProductURLs:
+            #         # Concat URL
+            #         itemURL="https://www.bol.com" + str(productURL)
+            #         itemURL=str.replace(itemURL,"&amp;","&")
+            #         itemURL=str.replace(itemURL,"&#x3D;","=")
                     
-                    # Product Page
-                    response=HttpRequest.HttpGetRequest(itemURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
+            #         # Product Page
+            #         response=HttpRequest.HttpGetRequest(itemURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
                     
-                    # Get product details
-                    dicData=objRegularExpressionParser.GetParseData(response[0])
+            #         # Get product details
+            #         dicData=objRegularExpressionParser.GetParseData(response[0])
                     
-                    # Save in database
-                    if len(dicData) > 0:
-                        ObjDbOpertions.SaveDictionaryIntoMySQLDB(dicData)
-                        print("%s scraped" % (dicData[0]))
-                    
-            pCount=int(ProductCount)
-            nPaging=0
-            Count=2
+            #         # Save in database
+            #         if len(dicData) > 0:
+            #             ObjDbOpertions.SaveDictionaryIntoMySQLDB(dicData)
+            #             print("%s scraped" % (dicData[0]))
+            
+            # Product Count
+            ProductCount = int(ProductCount)
+            numberOfPages = 0
+            # Current Page
+            Count = 1
             # Replace unicode
             nextPageURL=str.replace(nextPageURL,"&amp;","&")
             nextPageURL=str.replace(nextPageURL,"&#x3D;","=")
-            # Get page numbers
-            if(pCount !=0):
-                nPaging=pCount/20
-            for item in ProductURLs:
-                itemURL="https://www.bol.com" + str(item)
-                itemURL=str.replace(itemURL,"&#x3D;","=")
-                response=HttpRequest.HttpGetRequest(itemURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
+            # Get number of pages
+            if(ProductCount !=0):
+                numberOfPages = ProductCount/20
+            for productURL in ProductURLs:
+                # Concat URL
+                productURL="https://www.bol.com" + str(productURL)
+                productURL=str.replace(productURL,"&#x3D;","=")
+
+                # Product Page
+                response=HttpRequest.HttpGetRequest(productURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
+
+                # Get product details
                 dicData=objRegularExpressionParser.GetParseData(response[0])
+
+                # Save in database
                 print("%s scraped" % (dicData[0]))
             
             # Only crawl max of 3 pages deep
-            while Count <= nPaging or Count > 3:
+            while Count <= numberOfPages or Count > 3:
                 page="page="+str(Count)
                 nxtPageURL=str.replace(nextPageURL,"page=2",page)
                 nxtPageURL="https://www.bol.com" + nxtPageURL
