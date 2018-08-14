@@ -19,7 +19,7 @@ try:
 
     HttpRequest=HttpHandler.HttpHandler()
     ObjStringUtil=StringHelper.StringHelper()
-    ObjDbOpertions=DBOperation.DBOperation()
+    ObjDbOperations=DBOperation.DBOperation()
     objRegularExpressionParser=RegularExpressionParser.RegularExpressionParser()
     infoLavel=Config.Config.LogLevel
     logging.info('Completed configuring logger()!')
@@ -90,8 +90,8 @@ try:
                     
             #         # Save in database
             #         if len(dicData) > 0:
-            #             ObjDbOpertions.SaveDictionaryIntoMySQLDB(dicData)
-            #             print("%s scraped" % (dicData[0]))
+            #             ObjDbOperations.SaveDictionaryIntoMySQLDB(dicData)
+            #             print("%s scraped" % (dicData['ProductName']))
             
             # Product Count
             ProductCount = int(ProductCount)
@@ -114,9 +114,10 @@ try:
 
                 # Get product details
                 dicData=objRegularExpressionParser.GetParseData(response[0])
-
+            
                 # Save in database
-                print("%s scraped" % (dicData[0]))
+                ObjDbOperations.SaveDictionaryIntoMySQLDB(dicData)
+                print("%s scraped" % (dicData['ProductName']))
             
             # Only crawl max of 3 pages deep
             while Count <= numberOfPages or Count > 3:
@@ -135,8 +136,8 @@ try:
                     response=HttpRequest.HttpGetRequest(itemURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
                     dicData=objRegularExpressionParser.GetParseData(response[0])
                     if len(dicData) > 0:
-                        ObjDbOpertions.SaveDictionaryIntoMySQLDB(dicData)
-                        print("%s scraped" % (dicData[0]))
+                        ObjDbOperations.SaveDictionaryIntoMySQLDB(dicData)
+                        print("%s scraped" % (dicData['ProductName']))
                 Count += 1
                 ## Only scrape 5 pages
                 if(Count==5):

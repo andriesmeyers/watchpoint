@@ -13,11 +13,57 @@ class DBOperation():
         try:
             cnx = mysql.connector.connect(user='root', password='secret', host='127.0.0.1', database='watchpoint',use_pure=False)
             cursor = cnx.cursor()
-            query = ("INSERT INTO PriceComparisonBetweenSites "
-               "(Title, EAN, Price,KreFelPrice,MegekkoPrice) "
-               "VALUES (%s, %s, %s, %s, %s)" % (dicData['ProductName'], dicData['EAN'], dicData['BolPrice'], dicData['KrefelPrice'], dicData['MegekkoPrice'])
+            
+            # Insert Product
+            query = ("INSERT INTO Product "
+               "(EAN, Name, Image_URL) "
+               "VALUES ('%s', '%s', '%s')" 
+               % (
+                   dicData['EAN'],
+                   dicData['ProductName'],
+                   dicData['ImageURL']
+                )
             )
             cursor.execute(query)
+
+            # Insert Bol Price
+            query = ("INSERT INTO Price "
+               "(Shop_Id, Product_EAN, Value) "
+               "VALUES (%d, '%s', '%s')" 
+               % (
+                   1,
+                   dicData['EAN'],
+                   dicData['BolPrice'],
+                )
+            )
+            cursor.execute(query)
+
+             # Insert Krëfel Price
+            if dicData['KrefelPrice']:
+                query = ("INSERT INTO Price "
+                "(Shop_Id, Product_EAN, Value) "
+                "VALUES (%d, '%s', '%s')" 
+                % (
+                    2,
+                    dicData['EAN'],
+                    dicData['KrefelPrice'],
+                    )
+                )
+                cursor.execute(query)
+
+             # Insert Megekko Price
+            if dicData['MegekkoPrice']:
+                query = ("INSERT INTO Price "
+                "(Shop_Id, Product_EAN, Value) "
+                "VALUES (%d, '%s', '%s')" 
+                % (
+                    3,
+                    dicData['EAN'],
+                    dicData['MegekkoPrice'],
+                    )
+                )
+                cursor.execute(query)
+
             cnx.commit()
             cursor.close()
             cnx.close()

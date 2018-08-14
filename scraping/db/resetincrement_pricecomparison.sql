@@ -1,1 +1,0 @@
-ALTER TABLE pricecomparisonbetweensites AUTO_INCREMENT = 1

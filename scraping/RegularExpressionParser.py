@@ -10,6 +10,7 @@ from http.client import HTTPSConnection
 import HttpHandler
 import Proxy 
 from bs4 import BeautifulSoup
+
 class RegularExpressionParser():
     def GetParseData(self,strResponse):
             try:
@@ -23,12 +24,13 @@ class RegularExpressionParser():
                 ImageURL = ObjStringUtil.GetStringResult(strResponse, r"data-zoom-src=\"(?P<value>[\s\S]*?)\"", 0);
                 
                 Categories = document.findAll("li", {"class": "specs__category"})
+                
                 # Get Price from Krëfel
                 KreFelPrice=self.MatchBolwithKrefel(ProductName)
 
                 # Get Price from Megekko
-
                 MegekkoPrice=self.MatchBolwithMegekko(ProductName)
+
                 dicData = { 
                     'ProductName': ProductName,
                     'EAN': EAN,
