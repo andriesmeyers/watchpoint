@@ -13,10 +13,13 @@ import json
 import io
 import os
 import sys
+from bs4 import BeautifulSoup
 
 #Call Function here
 try:
-
+    if len(sys.argv) > 1 and sys.argv[1] == "continue":
+        print("Continuing script from last URL")
+        
     HttpRequest=HttpHandler.HttpHandler()
     ObjStringUtil=StringHelper.StringHelper()
     ObjDbOperations=DBOperation.DBOperation()
@@ -43,107 +46,94 @@ try:
     response=HttpRequest.HttpGetRequest(url,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
     regex=r"data-px-common-categorymenu-click-name=\"Computer\s*&amp;\s*Elektronica:[\s\S]*?<a href=\"(?P<value>[\s\S]*?)\""
     CategoryURLList=ObjStringUtil.GetArrayListWithRegex(response[0],regex,1)
-    # Loop categories
-    for item in CategoryURLList:
-        itemURL="https://www.bol.com" + str(item)
+    # Loop categories (ex. Laptops)
+    for CategoryURL in CategoryURLList:
+        itemURL="https://www.bol.com" + str(CategoryURL)
         response=HttpRequest.HttpGetRequest(itemURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy) 
         ProductBlock = ObjStringUtil.GetStringResult(response[0], r"data-test=\"navigation-block-title\">(?P<value>[\s\S]*?)data-test=\"navigation-block-title\">", 0);
-        ProductCategoryURLs=ObjStringUtil.GetArrayListWithRegex(ProductBlock,r"<li>[\s\S]*?href=\"(?P<value>[\s\S]*?)\"",1)
+        subCategoryURLs=ObjStringUtil.GetArrayListWithRegex(ProductBlock,r"<li>[\s\S]*?href=\"(?P<value>[\s\S]*?)\"",1)
         
-        # Loop subcategories
-        for subcategoryURL in ProductCategoryURLs:
-            print("Scraping category with url %s" % (subcategoryURL))
+        # Loop subcategories (ex. 2-in-1 Laptops)
+        for subcategoryURL in subCategoryURLs:
+            subCategory = ObjStringUtil.GetStringResult(subcategoryURL, r"/nl/l/(?P<value>[\s\S]*?)\/", 0)
+            print("Scraping category: %s" % (subCategory))
             
             # Concat URL
             subcategoryURL="https://www.bol.com" + str(subcategoryURL)
             subcategoryURL=str.replace(subcategoryURL,"&#x3D;","=")
             
             # Get subcategory page
-            response=HttpRequest.HttpGetRequest(subcategoryURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
-            
-            # Get URL for next page
-            nextPageURL = ObjStringUtil.GetStringResult(response[0], r"<ul\s*class=\"pagination\"\s*data-test=\"pagination\">[\s\S]*?<a href=\"(?P<value>[\s\S]*?)\"", 0)
-            
-            # Get product URLS
-            ProductURLs = ObjStringUtil.GetArrayListWithRegex(response[0], r"<a class=\"product-title\"\s*href=\"(?P<value>[\s\S]*?)\"", 1)
-            
-            # if failed try alternative
-            if len(ProductURLs)==0:
-                ProductURLs=ObjStringUtil.GetArrayListWithRegex(response[0],r"<a class=\"product-title\s*product-title--placeholder\"\s*href=\"(?P<value>[\s\S]*?)\"",1)
-            
+            response = HttpRequest.HttpGetRequest(subcategoryURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
+           
             # get Product Count
             ProductCount= ObjStringUtil.GetStringResult(response[0], r"<p\s*class=\"total-results js_total_results\"\s*data-test=\"number-of-articles\">(?P<value>[\s\S]*?)</p>", 0);
             ProductCount=(str).replace(ProductCount,"resultaten","").strip()
             
-            # # Loop product urls
-            # for productURL in ProductURLs:
-            #         # Concat URL
-            #         itemURL="https://www.bol.com" + str(productURL)
-            #         itemURL=str.replace(itemURL,"&amp;","&")
-            #         itemURL=str.replace(itemURL,"&#x3D;","=")
-                    
-            #         # Product Page
-            #         response=HttpRequest.HttpGetRequest(itemURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
-                    
-            #         # Get product details
-            #         dicData=objRegularExpressionParser.GetParseData(response[0])
-                    
-            #         # Save in database
-            #         if len(dicData) > 0:
-            #             ObjDbOperations.SaveDictionaryIntoMySQLDB(dicData)
-            #             print("%s scraped" % (dicData['ProductName']))
-            
             # Product Count
             ProductCount = int(ProductCount)
             numberOfPages = 0
+
             # Current Page
             Count = 1
-            # Replace unicode
-            nextPageURL=str.replace(nextPageURL,"&amp;","&")
-            nextPageURL=str.replace(nextPageURL,"&#x3D;","=")
+
             # Get number of pages
             if(ProductCount !=0):
-                numberOfPages = ProductCount/20
-            for productURL in ProductURLs:
-                # Concat URL
-                productURL="https://www.bol.com" + str(productURL)
-                productURL=str.replace(productURL,"&#x3D;","=")
-
-                # Product Page
-                response=HttpRequest.HttpGetRequest(productURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
-
-                # Get product details
-                dicData=objRegularExpressionParser.GetParseData(response[0])
-            
-                # Save in database
-                ObjDbOperations.SaveDictionaryIntoMySQLDB(dicData)
-                print("%s scraped" % (dicData['ProductName']))
+                numberOfPages = ProductCount/22
             
             # Only crawl max of 3 pages deep
             while Count <= numberOfPages or Count > 3:
-                page="page="+str(Count)
-                nxtPageURL=str.replace(nextPageURL,"page=2",page)
-                nxtPageURL="https://www.bol.com" + nxtPageURL
-                response=HttpRequest.HttpGetRequest(nxtPageURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
-                ProductURL=ObjStringUtil.GetArrayListWithRegex(response[0],r"<a class=\"product-title\"\s*href=\"(?P<value>[\s\S]*?)\"",1)
+                '''
+                SCRAPE PRODUCTS
+                '''
+
+                # Get product URLS
+                ProductURLs = ObjStringUtil.GetArrayListWithRegex(response[0], r"<a class=\"product-title\"\s*href=\"(?P<value>[\s\S]*?)\"", 1)
                 
-                if len(ProductURL)==0:
-                    ProductURL=ObjStringUtil.GetArrayListWithRegex(response[0],r"<a class=\"product-title\s*product-title--placeholder\"\s*href=\"(?P<value>[\s\S]*?)\"",1)
-                for item in ProductURL:
-                    itemURL="https://www.bol.com" + str(item)
-                    itemURL=str.replace(itemURL,"&amp;","&")
-                    itemURL=str.replace(itemURL,"&#x3D;","=")
-                    response=HttpRequest.HttpGetRequest(itemURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
-                    dicData=objRegularExpressionParser.GetParseData(response[0])
+                # if failed try alternative
+                if len(ProductURLs)==0:
+                    ProductURLs=ObjStringUtil.GetArrayListWithRegex(response[0],r"<a class=\"product-title\s*product-title--placeholder\"\s*href=\"(?P<value>[\s\S]*?)\"",1)
+                
+                # if len(ProductURL)==0:
+                #     ProductURL=ObjStringUtil.GetArrayListWithRegex(response[0],r"<a class=\"product-title\s*product-title--placeholder\"\s*href=\"(?P<value>[\s\S]*?)\"",1)
+                for productURL in ProductURLs:
+                    productURL="https://www.bol.com" + str(productURL)
+                    productURL=str.replace(productURL,"&amp;","&")
+                    productURL=str.replace(productURL,"&#x3D;","=")
+                    product_page = HttpRequest.HttpGetRequest(productURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
+                    dicData=objRegularExpressionParser.GetParseData(product_page[0])
                     if len(dicData) > 0:
                         ObjDbOperations.SaveDictionaryIntoMySQLDB(dicData)
                         print("%s scraped" % (dicData['ProductName']))
+
+                '''
+                SCRAPE NEXT PAGE URL
+                '''
+
+                # Get URL for next page
+                document = BeautifulSoup(response[0], 'html.parser')
+                pagination = document.find_all("ul", {"class": "pagination"})
+                next_page = pagination[0].find_all("li", {"class": "is-active"})[0].find_next('li').a
+                nextPageURL = next_page['href']
+
+                # Replace unicode
+                nextPageURL=str.replace(nextPageURL,"&amp;","&")
+                nextPageURL=str.replace(nextPageURL,"&#x3D;","=")
+                
+                page="page="+str(Count)
+                nextPageURL="https://www.bol.com" + nextPageURL
+
+                # Get next page
+                response=HttpRequest.HttpGetRequest(nextPageURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
+
+                # Increment counter
                 Count += 1
-                ## Only scrape 5 pages
-                if(Count==5):
-                    break
+                
 except KeyboardInterrupt:
-            print('Script interrupted by user')
+            if nextPageURL and len(nextPageURL) > 0:
+                text_file = open("lastURL.txt", "w")
+                text_file.write(nextPageURL)
+                text_file.close()
+            print("\nScript interupted by user\n")
             sys.exit(0)
 except Exception as error:               
             exc_type, exc_obj, exc_tb = sys.exc_info()

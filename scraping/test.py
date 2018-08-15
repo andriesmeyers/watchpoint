@@ -13,45 +13,31 @@ import json
 import io
 import os
 import sys
+from bs4 import BeautifulSoup
 
 #Call Function here
 try:
-
-  
     HttpRequest=HttpHandler.HttpHandler()
     ObjStringUtil=StringHelper.StringHelper()
-    ObjDbOpertions=DBOperation.DBOperation()
+    ObjDbOperations=DBOperation.DBOperation()
     objRegularExpressionParser=RegularExpressionParser.RegularExpressionParser()
     infoLavel=Config.Config.LogLevel
     logging.info('Completed configuring logger()!')
-    
+    objProxy=Proxy.Proxy.GetProxy(False,"","","",0,"",123)
     isRedirection=True
     Cookies=""
     Refer=""
     ResponseCookie=""
     redirectionURL=""
-   
 
-    url="https://www.bol.com/nl/rnwy/menu/offcanvas.html?cache=nl"
-    
-    HttpRequest.HttpUserAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36"
-    HttpRequest.HttpAccept="text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
-    HttpRequest.HttpAcceptEncoding="gzip, deflate, br"
-    HttpRequest.HttpRequestHeaderName1="upgrade-insecure-requests"
-    HttpRequest.HttpRequestHeaderValue1="1"
-    
-    objProxy=Proxy.Proxy.GetProxy(False,"","","",0,"",123)
-    response=HttpRequest.HttpGetRequest(url,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
-    regex=r"data-px-common-categorymenu-click-name=\"Computer\s*&amp;\s*Elektronica:[\s\S]*?<a href=\"(?P<value>[\s\S]*?)\""
-    CategoryURLList=ObjStringUtil.GetArrayListWithRegex(response[0],regex,1)
+    response=HttpRequest.HttpGetRequest("https://www.bol.com/nl/l/2-in-1-laptop-azerty/N/4770+32605+28695/?promo=laptops_360__A_51383-51384-2-in-1-laptops_1","GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
+    document = BeautifulSoup(response[0], 'html.parser')
+    pagination = document.find_all("ul", {"class": "pagination"})
+    mydivs = pagination[0].find_all("li", {"class": "is-active"})[0].find_next('li').a
+    mydivs['href']
+    # nextPageURL = ObjStringUtil.GetStringResult(response[0], r"<ul\s*class=\"pagination\"\s*data-test=\"pagination\"><li\s*class=\"is-active\">[\s\S]*?</li><li><a href=\"(?P<value>[\s\S]*?)\"", 0)
 
-    nextPageURL=ObjStringUtil.GetStringResult(response[0], r"<ul\s*class=\"pagination\"", 0)
-    file = open("test.txt","w") 
- 
-    file.write(response[0]) 
-    file.close() 
-    print (nextPageURL)
-    print (type(nextPageURL))
+    print("Scraping category: %s" % (mydivs['href']))
 except Exception as error:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]

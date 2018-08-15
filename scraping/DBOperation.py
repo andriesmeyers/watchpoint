@@ -12,16 +12,28 @@ class DBOperation():
     def SaveDictionaryIntoMySQLDB(self,dicData):
         try:
             cnx = mysql.connector.connect(user='root', password='secret', host='127.0.0.1', database='watchpoint',use_pure=False)
-            cursor = cnx.cursor()
-            
+            cursor = cnx.cursor(buffered=True)
+
+            # Get Category
+            if dicData['Categories']:
+                query = ("INSERT IGNORE INTO Category "
+                    "SET Name = '%s'" % (dicData['Categories'][0].get_text()))
+                cursor.execute(query)
+                query = ("SELECT Id FROM Category "
+                    "WHERE Name = '%s'" % (dicData['Categories'][0].get_text()))
+                cursor.execute(query)
+                result_set = cursor.fetchone()
+                Category_Id = result_set[0]
+
             # Insert Product
             query = ("INSERT INTO Product "
-               "(EAN, Name, Image_URL) "
-               "VALUES ('%s', '%s', '%s')" 
+               "(EAN, Name, Image_URL, Category_Id) "
+               "VALUES ('%s', '%s', '%s', '%d')" 
                % (
                    dicData['EAN'],
                    dicData['ProductName'],
-                   dicData['ImageURL']
+                   dicData['ImageURL'],
+                   Category_Id
                 )
             )
             cursor.execute(query)
@@ -51,7 +63,7 @@ class DBOperation():
                 )
                 cursor.execute(query)
 
-             # Insert Megekko Price
+            # Insert Megekko Price
             if dicData['MegekkoPrice']:
                 query = ("INSERT INTO Price "
                 "(Shop_Id, Product_EAN, Value) "
