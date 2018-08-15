@@ -30,14 +30,17 @@ try:
     ResponseCookie=""
     redirectionURL=""
 
-    response=HttpRequest.HttpGetRequest("https://www.bol.com/nl/l/2-in-1-laptop-azerty/N/4770+32605+28695/?promo=laptops_360__A_51383-51384-2-in-1-laptops_1","GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
+    response=HttpRequest.HttpGetRequest("https://www.bol.com/nl/l/apple-laptops/N/4770+4294862300+32605/?promo=laptops_360__A_51383-51407-apple-macbooks_2_","GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
     document = BeautifulSoup(response[0], 'html.parser')
     pagination = document.find_all("ul", {"class": "pagination"})
-    mydivs = pagination[0].find_all("li", {"class": "is-active"})[0].find_next('li').a
-    mydivs['href']
+    if pagination[0].find('li'):
+        mydivs = pagination[0].find_all("li", {"class": "is-active"})[0].find_next('li').a
+    else: 
+        print('Geen paginatie')
+    # mydivs['href']
     # nextPageURL = ObjStringUtil.GetStringResult(response[0], r"<ul\s*class=\"pagination\"\s*data-test=\"pagination\"><li\s*class=\"is-active\">[\s\S]*?</li><li><a href=\"(?P<value>[\s\S]*?)\"", 0)
 
-    print("Scraping category: %s" % (mydivs['href']))
+    # print("Scraping category: %s" % (mydivs['href']))
 except Exception as error:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]

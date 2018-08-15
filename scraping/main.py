@@ -85,7 +85,6 @@ try:
                 '''
                 SCRAPE PRODUCTS
                 '''
-
                 # Get product URLS
                 ProductURLs = ObjStringUtil.GetArrayListWithRegex(response[0], r"<a class=\"product-title\"\s*href=\"(?P<value>[\s\S]*?)\"", 1)
                 
@@ -93,8 +92,7 @@ try:
                 if len(ProductURLs)==0:
                     ProductURLs=ObjStringUtil.GetArrayListWithRegex(response[0],r"<a class=\"product-title\s*product-title--placeholder\"\s*href=\"(?P<value>[\s\S]*?)\"",1)
                 
-                # if len(ProductURL)==0:
-                #     ProductURL=ObjStringUtil.GetArrayListWithRegex(response[0],r"<a class=\"product-title\s*product-title--placeholder\"\s*href=\"(?P<value>[\s\S]*?)\"",1)
+                # Loop products (ex. Apple MacBook Pro (2018)) 
                 for productURL in ProductURLs:
                     productURL="https://www.bol.com" + str(productURL)
                     productURL=str.replace(productURL,"&amp;","&")
@@ -112,19 +110,22 @@ try:
                 # Get URL for next page
                 document = BeautifulSoup(response[0], 'html.parser')
                 pagination = document.find_all("ul", {"class": "pagination"})
-                next_page = pagination[0].find_all("li", {"class": "is-active"})[0].find_next('li').a
-                nextPageURL = next_page['href']
+                # Check for pagination
+                if pagination[0].find('li'):
+                    next_page = pagination[0].find_all("li", {"class": "is-active"})[0].find_next('li').a
+                    nextPageURL = next_page['href']
 
-                # Replace unicode
-                nextPageURL=str.replace(nextPageURL,"&amp;","&")
-                nextPageURL=str.replace(nextPageURL,"&#x3D;","=")
-                
-                page="page="+str(Count)
-                nextPageURL="https://www.bol.com" + nextPageURL
+                    # Replace unicode
+                    nextPageURL=str.replace(nextPageURL,"&amp;","&")
+                    nextPageURL=str.replace(nextPageURL,"&#x3D;","=")
+                    
+                    page="page="+str(Count)
+                    nextPageURL="https://www.bol.com" + nextPageURL
 
-                # Get next page
-                response=HttpRequest.HttpGetRequest(nextPageURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
-
+                    # Get next page
+                    response=HttpRequest.HttpGetRequest(nextPageURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
+                else: 
+                    break
                 # Increment counter
                 Count += 1
                 
