@@ -8,14 +8,14 @@ class StringHelper():
                 for Match in Matches:
                     return Match
             except Exception as error:
-                print ('Error !!!!! %s' % error)
+                print ('Error: %s' % error)
 
         def GetArrayListWithRegex(self,strInputText, strSearchPattern):
             try:
                 Matches=re.findall(strSearchPattern,strInputText,re.M|re.I)
                 return Matches
             except Exception as error:
-                print ('Error !!!!! %s' % error)
+                print ('Error: %s' % error)
 
 
         def FilterString(self,inputString, removeTags, removeWhiteSpaces):
@@ -40,7 +40,7 @@ class StringHelper():
                 return inputString
 
             except Exception as error:
-                print ('Error !!!!! %s' % error)
+                print ('Error: %s' % error)
 
         
         def saveListInTextFile(self, filename, stringList ):
@@ -50,5 +50,5 @@ class StringHelper():
                     text_file.write("%s\n" % string)
                 text_file.close()
             except Exception as error:
-                print('Error !!!!! %s' % error)
+                print('Error: %s' % error)
 

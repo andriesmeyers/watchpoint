@@ -60,40 +60,38 @@ try:
     # Loop categories (ex. Laptops)
     for CategoryURL in CategoryURLList:
         
-        lastURLS[0] = CategoryURL
-        CategoryURL = "https://www.bol.com" + str(CategoryURL)
-        response = HttpRequest.HttpGetRequest(CategoryURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy) 
-        ProductBlock = ObjStringUtil.GetStringResult(response[0], r"data-test=\"navigation-block-title\">(?P<value>[\s\S]*?)data-test=\"navigation-block-title\">")
-        subCategoryURLs=ObjStringUtil.GetArrayListWithRegex(ProductBlock,r"<li>[\s\S]*?href=\"(?P<value>[\s\S]*?)\"")
+        lastURLS[0]     = CategoryURL
+        CategoryURL     = "https://www.bol.com" + str(CategoryURL)
+        response        = HttpRequest.HttpGetRequest(CategoryURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy) 
+        ProductBlock    = ObjStringUtil.GetStringResult(response[0], r"data-test=\"navigation-block-title\">(?P<value>[\s\S]*?)data-test=\"navigation-block-title\">")
+        subCategoryURLs = ObjStringUtil.GetArrayListWithRegex(ProductBlock,r"<li>[\s\S]*?href=\"(?P<value>[\s\S]*?)\"")
         
         if subCategoryURLs is not None and len(subCategoryURLs) > 0:
             # Loop subcategories (ex. 2-in-1 Laptops)
             index = 0
-
             # delete previous subcategories
             if lastURLS[1] in subCategoryURLs:
                 lastsubCategoryIndex = subCategoryURLs.index(lastURLS[1])
                 del subCategoryURLs[0:lastsubCategoryIndex]
-        
+            else: 
+                print('Last subcategory URL %s not found\n' % lastURLS[1])
+
             for subcategoryURL in subCategoryURLs:
+                print(subcategoryURL)
                 # Skip 'keuze van Bol.Com'
                 if 'keuze-van' in subcategoryURL:
                     continue
                 
                 # add subcategory url to Last URLs
                 lastURLS[1] = subcategoryURL
-            
                 ObjStringUtil.saveListInTextFile('lastURL.txt', lastURLS)
 
-                # Skip 'Alle' from categories
-                if index == len(subCategoryURLs) - 1:
-                    break
                 subCategory = ObjStringUtil.GetStringResult(subcategoryURL, r"/nl/l/(?P<value>[\s\S]*?)\/")
                 
                 # Concat URL
                 subcategoryURL="https://www.bol.com" + str(subcategoryURL)
                 subcategoryURL=str.replace(subcategoryURL,"&#x3D;","=")
-                
+
                 # Get subcategory page
                 response = HttpRequest.HttpGetRequest(subcategoryURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
                 print("\nScraping category: %s\n" % (subCategory))
@@ -116,7 +114,7 @@ try:
             
                 # Only crawl max of 3 pages deep
                 while Count <= numberOfPages and Count <= 3:
-                    print("Scraping page: %d" % (Count))
+                    print("\nScraping page: %d" % (Count))
                     '''
                     SCRAPE PRODUCTS
                     '''

@@ -80,7 +80,7 @@ class HttpHandler():
             #ResponseCookie=ObjResponse.headers._store['set-cookie'][1]
             return response,ResponseCookie,redirectionURL
         except Exception as error:
-            print ('Error !!!!! %s' % error)
+            print ('Error: %s' % error)
 
 
     def CreateHeaders(self):
@@ -112,7 +112,7 @@ class HttpHandler():
             Headers=ast.literal_eval(Headers)
             return Headers  
         except Exception as error:
-            print ('Error !!!!! %s' % error)
+            print ('Error: %s' % error)
 
     # end function HttpGetRequest
     # Convert post data from string into dictionary
