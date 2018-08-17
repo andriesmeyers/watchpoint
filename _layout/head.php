@@ -20,6 +20,7 @@
 
     <!-- Bootstrap core CSS -->
     <link href="vendor/twbs/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="vendor/components/font-awesome/css/fontawesome-all.min.css" rel="stylesheet">
 
     <!-- Custom styles -->
     <link href="styles/css/app.css" rel="stylesheet">
