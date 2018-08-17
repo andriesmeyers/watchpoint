@@ -13,28 +13,31 @@ $result = $mysqli->query($sql_query);
 <?php
     require('_layout/header.php');
 ?>
+<header class="jumbotron my-4">
+      <h1 class="display-3">Watchpoint</h1>
+      <p class="lead">Vergelijk prijzen van meer dan 1000 producten</p>
+</header>
+<h1 class="my-4">Categorieën</h1>
 
-      <h1 class="my-4">Categorieën</h1>
+<!-- Marketing Icons Section -->
 
-      <!-- Marketing Icons Section -->
-      
-      <div class="row">
-        <?php while ($row = $result->fetch_assoc()){ ?>
-       
-        <div class="col-lg-4 mb-4">
-          <div class="card h-100">
-            <img class="card-img-top" src="<?php echo $row['Image_URL'];?>" alt="Card image cap">
-            <div class="card-body">
-              <h4 class="card-text"><?php echo $row['Name']; ?></h4>
-            </div>
-            <div class="card-footer">
-              <a href='category.php<?php echo "?category=" . $row['Name']; ?>' class="btn btn-primary">Prijzen</a>
-            </div>
-          </div>
-        </div>
-        <?php } ?>
+<div class="row">
+  <?php while ($row = $result->fetch_assoc()){ ?>
+  
+  <div class="col-lg-4 mb-4">
+    <div class="card h-100">
+      <img class="card-img-top" src="<?php echo $row['Image_URL'];?>" alt="Card image cap">
+      <div class="card-body">
+        <h4 class="card-text"><?php echo $row['Name']; ?></h4>
       </div>
-      <!-- /.row -->
+      <div class="card-footer">
+        <a href='category.php<?php echo "?category=" . $row['Name']; ?>' class="btn btn-primary">Prijzen</a>
+      </div>
+    </div>
+  </div>
+  <?php } ?>
+</div>
+<!-- /.row -->
 
 <?php
 require('_layout/footer.php');

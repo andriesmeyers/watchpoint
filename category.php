@@ -3,10 +3,11 @@ include 'Models/Database.php';
 $db = Database::getInstance();
 $mysqli = $db->getConnection(); 
 $sql_query = 
-  "SELECT * FROM Product "
-  . "LEFT JOIN Price "
-  . "ON EAN = Price.Product_EAN "
-  . "ORDER BY Name";
+  "SELECT EAN, Product.Name, Image_URL FROM Product "
+  . "LEFT JOIN Category "
+  . "ON Category_Id = Category.Id "
+  . "WHERE Category.Name = " . "'" . $_GET['category'] . "' "
+  . "ORDER BY Product.Name";
 
 $result = $mysqli->query($sql_query);
 
