@@ -13,33 +13,31 @@ import json
 import io
 import os
 import sys
-from bs4 import BeautifulSoup
+# from bs4 import BeautifulSoup
 
 #Call Function here
 try:
     HttpRequest=HttpHandler.HttpHandler()
-    ObjStringUtil=StringHelper.StringHelper()
-    ObjDbOperations=DBOperation.DBOperation()
-    objRegularExpressionParser=RegularExpressionParser.RegularExpressionParser()
-    infoLavel=Config.Config.LogLevel
-    logging.info('Completed configuring logger()!')
-    objProxy=Proxy.Proxy.GetProxy(False,"","","",0,"",123)
+    HttpRequest.HttpUserAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36"
+    HttpRequest.HttpAccept="text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
+    HttpRequest.HttpAcceptEncoding="gzip, deflate, br"
+    HttpRequest.HttpRequestHeaderName1="upgrade-insecure-requests"
+    HttpRequest.HttpRequestHeaderValue1="1"
     isRedirection=True
     Cookies=""
     Refer=""
     ResponseCookie=""
     redirectionURL=""
+    objProxy=Proxy.Proxy.GetProxy(False,"","","",0,"",123)
 
-    response=HttpRequest.HttpGetRequest("https://www.bol.com/nl/l/apple-laptops/N/4770+4294862300+32605/?promo=laptops_360__A_51383-51407-apple-macbooks_2_","GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
-    document = BeautifulSoup(response[0], 'html.parser')
-    #ObjStringUtil.saveStringInTextFile('lastURL.txt', 'HELLO WORLD')
+    itemURL=str("https://api.krefel.be/api/v2/krefel/products/search?fields=FULL&query="+"190198045652"+"&currentPage=0&pageSize=1000")
+    response=HttpRequest.HttpGetRequest(itemURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
+
+    data=json.loads(str(response[0]))
+    match=False
+    if len(data['products']) > 0:
+        print(data['products'][0]['price']['value'])
     
-    stringtest = '/nl/l/2-in-1-laptop-azerty/N/4770+32605+28695/?promo&#x3D;laptops_360__A_51383-51384-2-in-1-laptops_1_'
-    lijst = ['/nl/l/2-in-1-laptop-azerty/N/4770+32605+28695/?promo&#x3D;laptops_360__A_51383-51384-2-in-1-laptops_1_',
-    '/nl/l/apple-laptops/N/4770+4294862300+32605/?promo=laptops_360__A_51383-51407-apple-macbooks_2_'
-    ]
-    if stringtest in lijst:
-        print('gevonden')
 except Exception as error:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]

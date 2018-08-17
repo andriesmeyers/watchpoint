@@ -3,17 +3,117 @@
  * Copyright 2013-2017 Start Bootstrap
  * Licensed under MIT (https://github.com/BlackrockDigital/startbootstrap-logomodern-business-nav/blob/master/LICENSE)
  */
+@import url('https://fonts.googleapis.com/css?family=Lato:300,400,700|Source+Sans+Pro:300,400,700');
 
- body {
-    padding-top: 54px;
-  }
-  
-  @media (min-width: 992px) {
-    body {
-      padding-top: 56px;
-    }
-  }
+body,
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  height: 100%;
+}
 
+body {
+  padding-top: 54px;
+  font-family: 'Lato', Helvetica, Arial, sans-serif;
+}
+h1, h2, h3, h4, h5, h6{
+  font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif !important;
+}
+
+@media (min-width: 992px) {
+  body {
+    padding-top: 56px;
+  }
+}
+
+hr {
+  max-width: 50px;
+  border-width: 3px;
+  border-color: #F05F40;
+}
+
+hr.light {
+  border-color: #fff;
+}
+
+img{
+  vertical-align: middle;
+  border-style: none;
+}
+header{
+  margin-bottom: 25px;
+  position: absolute;
+  z-index: 5;
+  background: #0075ad;
+  padding: 20px 70px 0 70px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+}
+
+  header .header-brand{
+    display: inline-block;
+    padding-top: .3125rem;
+    padding-bottom: .3125rem;
+    margin-right: 1rem;
+    font-size: 1.25rem;
+    line-height: inherit;
+    white-space: nowrap;
+  }
+  header .logo-wrapper{
+    display: inline-block;
+    vertical-align: middle;
+    width: 200px;
+    margin-right: 50px;
+  }
+  header .logo-wrapper #logo{
+    display: inline-block;
+    max-width: 90%;
+    height: auto;
+    min-height: 45px;
+  }
+  header .logo-wrapper img{
+    width: 100%;
+    height: auto;
+  }
+  header .middle-entry{
+    display: inline-block;
+    vertical-align: middle;
+  }
+  header .middle-entry .icon-entry {
+    width: 200px;
+    float: left;
+  }
+  header .icon-entry .image {
+    width: 45px;
+    height: 45px;
+    float: left;
+    line-height: 45px;
+    text-align: center;
+    background: transparent;
+    border: 2px #3391bd solid;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+  header .icon-entry .image .fa {
+    line-height: 41px;
+    color: #fff;
+    display: block;
+  }
+  header .icon-entry .text {
+    color: #add7eb;
+}
+  header .icon-entry:hover .image {
+    background: #3391bd;
+  }
+  header .icon-entry .text b {
+    font-size: 16px;
+    line-height: 18px;
+    font-weight: 600;
+    color: #fff;
+  }
 .card-img-top{
   object-fit: cover;
   width: 100%;

@@ -13,6 +13,7 @@ import json
 import io
 import os
 import sys
+import math
 from bs4 import BeautifulSoup
 
 #Call Function here
@@ -73,11 +74,11 @@ try:
             if lastURLS[1] in subCategoryURLs:
                 lastsubCategoryIndex = subCategoryURLs.index(lastURLS[1])
                 del subCategoryURLs[0:lastsubCategoryIndex]
+                print('Starting from %s' % lastURLS[1])
             else: 
                 print('Last subcategory URL %s not found\n' % lastURLS[1])
 
             for subcategoryURL in subCategoryURLs:
-                print(subcategoryURL)
                 # Skip 'keuze van Bol.Com'
                 if 'keuze-van' in subcategoryURL:
                     continue
@@ -94,78 +95,82 @@ try:
 
                 # Get subcategory page
                 response = HttpRequest.HttpGetRequest(subcategoryURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
-                print("\nScraping category: %s\n" % (subCategory))
 
                 # get Product Count
                 ProductCount = ObjStringUtil.GetStringResult(response[0], r"<p\s*class=\"total-results js_total_results\"\s*data-test=\"number-of-articles\">(?P<value>[\s\S]*?)</p>");
-                ProductCount = (str).replace(ProductCount,"resultaten","").strip()
-                ProductCount = (str).replace(ProductCount,".","").strip()
-                ProductCount = int(ProductCount)
+                if ProductCount is not None:    
+                    ProductCount = (str).replace(ProductCount,"resultaten","").strip()
+                    ProductCount = (str).replace(ProductCount,".","").strip()
+                    print(ProductCount)
+                    print(type(ProductCount))
+                    ProductCount = int(ProductCount)
+                    print("\nScraping category: %s\n" % (subCategory))
 
-                # Product Count
-                numberOfPages = 0
+                    # Pages Count
+                    numberOfPages = 0
 
-                # Current Page
-                Count = 1
+                    # Current Page
+                    Count = 1
 
-                # Get number of pages
-                if(ProductCount !=0):
-                    numberOfPages = ProductCount/22
-            
-                # Only crawl max of 3 pages deep
-                while Count <= numberOfPages and Count <= 3:
-                    print("\nScraping page: %d" % (Count))
-                    '''
-                    SCRAPE PRODUCTS
-                    '''
-                    # Get product URLS
-                    ProductURLs = ObjStringUtil.GetArrayListWithRegex(response[0], r"<a class=\"product-title\"\s*href=\"(?P<value>[\s\S]*?)\"")
-                    
-                    # if failed try alternative
-                    if len(ProductURLs)==0:
-                        ProductURLs=ObjStringUtil.GetArrayListWithRegex(response[0],r"<a class=\"product-title\s*product-title--placeholder\"\s*href=\"(?P<value>[\s\S]*?)\"")
-                                    
-                    # Loop products (ex. Apple MacBook Pro (2018)) 
-                    for productURL in ProductURLs:
-                        productURL="https://www.bol.com" + str(productURL)
-                        productURL=str.replace(productURL,"&amp;","&")
-                        productURL=str.replace(productURL,"&#x3D;","=")
-                        product_page = HttpRequest.HttpGetRequest(productURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
-                        if productURL is not None:
-                            print("\nScraping product: %s" % (productURL))
-                            dicData=objRegularExpressionParser.GetParseData(product_page[0])
-                            if len(dicData) > 0:
-                                ObjDbOperations.SaveDictionaryIntoMySQLDB(dicData)
-                                print("%s scraped" % (dicData['ProductName']))
+                    # Get number of pages
+                    if ProductCount !=0 :
+                        numberOfPages = ProductCount/22
+                        numberOfPages = math.ceil(numberOfPages)
+                    # Only crawl max of 3 pages deep
+                    while Count <= numberOfPages and Count <= 3:
+                        print("\nScraping page: %d" % (Count))
+                        '''
+                        SCRAPE PRODUCTS
+                        '''
+                        # Get product URLS
+                        ProductURLs = ObjStringUtil.GetArrayListWithRegex(response[0], r"<a class=\"product-title\"\s*href=\"(?P<value>[\s\S]*?)\"")
+                        
+                        # if failed try alternative
+                        if len(ProductURLs)==0:
+                            ProductURLs=ObjStringUtil.GetArrayListWithRegex(response[0],r"<a class=\"product-title\s*product-title--placeholder\"\s*href=\"(?P<value>[\s\S]*?)\"")
+                                        
+                        # Loop products (ex. Apple MacBook Pro (2018)) 
+                        for productURL in ProductURLs:
+                            productURL="https://www.bol.com" + str(productURL)
+                            productURL=str.replace(productURL,"&amp;","&")
+                            productURL=str.replace(productURL,"&#x3D;","=")
+                            product_page = HttpRequest.HttpGetRequest(productURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
+                            if productURL is not None:
+                                print("\nScraping product: %s" % (productURL))
+                                dicData=objRegularExpressionParser.GetParseData(product_page[0])
+                                if len(dicData) > 0:
+                                    ObjDbOperations.SaveDictionaryIntoMySQLDB(dicData)
+                                    print("%s scraped" % (dicData['ProductName']))
 
-                    '''
-                    SCRAPE NEXT PAGE URL
-                    '''
+                        '''
+                        SCRAPE NEXT PAGE URL
+                        '''
 
-                    # Get URL for next page
-                    document = BeautifulSoup(response[0], 'html.parser')
-                    pagination = document.find_all("ul", {"class": "pagination"})
-                    # Check for pagination
-                    if pagination[0].find('li'):
-                        next_page = pagination[0].find_all("li", {"class": "is-active"})[0].find_next('li').a
-                        nextPageURL = next_page['href']
+                        # Get URL for next page
+                        document = BeautifulSoup(response[0], 'html.parser')
+                        pagination = document.find_all("ul", {"class": "pagination"})
+                        # Check for pagination
+                        if pagination[0].find('li'):
+                            next_page = pagination[0].find_all("li", {"class": "is-active"})[0].find_next('li').a
+                            nextPageURL = next_page['href']
 
-                        # Replace unicode
-                        nextPageURL=str.replace(nextPageURL,"&amp;","&")
-                        nextPageURL=str.replace(nextPageURL,"&#x3D;","=")
-                        nextPageURL="https://www.bol.com" + nextPageURL
+                            # Replace unicode
+                            nextPageURL=str.replace(nextPageURL,"&amp;","&")
+                            nextPageURL=str.replace(nextPageURL,"&#x3D;","=")
+                            nextPageURL="https://www.bol.com" + nextPageURL
 
-                        # Get next page
-                        response=HttpRequest.HttpGetRequest(nextPageURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
-                    else: 
-                        break
-                    # Increment counter
-                    Count += 1
+                            # Get next page
+                            response=HttpRequest.HttpGetRequest(nextPageURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
+                        else: 
+                            break
+                        # Increment counter
+                        Count += 1
             # erase last subcategory after loop finishes
             lastURLS[1] = None
             ObjStringUtil.saveListInTextFile('lastURL.txt', lastURLS)
 
             index += 1
+    print('\n Finished scraping!')
 except KeyboardInterrupt:
             print("\nScript interupted by user\n")
             sys.exit(0)

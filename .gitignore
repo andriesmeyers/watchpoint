@@ -95,6 +95,5 @@ typings/
 # End of https://www.gitignore.io/api/node,composer,visualstudiocode
 
 # CUSTOM
-lastURL.txt
 /scraping/test.txt
 /scraping/test.py
