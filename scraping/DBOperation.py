@@ -41,7 +41,7 @@ class DBOperation():
             # Insert Bol Price
             query = ("INSERT INTO Price "
                "(Shop_Id, Product_EAN, Value) "
-               "VALUES (%d, '%s', '%s')" 
+               "VALUES (%d, '%s', %s)" 
                % (
                    1,
                    dicData['EAN'],
@@ -54,7 +54,7 @@ class DBOperation():
             if dicData['KrefelPrice']:
                 query = ("INSERT INTO Price "
                 "(Shop_Id, Product_EAN, Value) "
-                "VALUES (%d, '%s', '%s')" 
+                "VALUES (%d, '%s', %s)" 
                 % (
                     2,
                     dicData['EAN'],
@@ -67,7 +67,7 @@ class DBOperation():
             if dicData['MegekkoPrice']:
                 query = ("INSERT INTO Price "
                 "(Shop_Id, Product_EAN, Value) "
-                "VALUES (%d, '%s', '%s')" 
+                "VALUES (%d, '%s', %s)" 
                 % (
                     3,
                     dicData['EAN'],

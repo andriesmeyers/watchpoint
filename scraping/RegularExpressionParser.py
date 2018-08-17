@@ -17,11 +17,11 @@ class RegularExpressionParser():
                 ObjStringUtil=StringHelper.StringHelper()
                 
                 document = BeautifulSoup(strResponse, 'html.parser')
-                ProductName = ObjStringUtil.GetStringResult(strResponse, r"<title>(?P<value>[\s\S]*?)</title>", 0);
+                ProductName = ObjStringUtil.GetStringResult(strResponse, r"<title>(?P<value>[\s\S]*?)</title>");
                 ProductName=str.replace(ProductName,"bol.com |","")
-                EAN = ObjStringUtil.GetStringResult(strResponse, r"data-ean=\"(?P<value>[\s\S]*?)\"", 0);
-                Price = ObjStringUtil.GetStringResult(strResponse, r"\"price\":(?P<value>[\s\S]*?),\"", 1);
-                ImageURL = ObjStringUtil.GetStringResult(strResponse, r"data-zoom-src=\"(?P<value>[\s\S]*?)\"", 0);
+                EAN = ObjStringUtil.GetStringResult(strResponse, r"data-ean=\"(?P<value>[\s\S]*?)\"");
+                Price = ObjStringUtil.GetStringResult(strResponse, r"\"price\":(?P<value>[\s\S]*?),\"");
+                ImageURL = ObjStringUtil.GetStringResult(strResponse, r"data-zoom-src=\"(?P<value>[\s\S]*?)\"");
                 
                 Categories = document.findAll("li", {"class": "specs__category"})
                 

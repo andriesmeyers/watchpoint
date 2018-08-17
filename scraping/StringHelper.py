@@ -2,19 +2,15 @@ import re
 
 class StringHelper():
 
-        def GetStringResult(self,strInputText, strSearchPattern, GroupNo):
+        def GetStringResult(self,strInputText, strSearchPattern):
             try:
                 Matches=re.findall(strSearchPattern,strInputText,re.M|re.I)
-                i=0
                 for Match in Matches:
-                    if(i==GroupNo):
-                        return Match
-                    else:
-                        i=i+1
+                    return Match
             except Exception as error:
                 print ('Error !!!!! %s' % error)
 
-        def GetArrayListWithRegex(self,strInputText, strSearchPattern, GroupNo):
+        def GetArrayListWithRegex(self,strInputText, strSearchPattern):
             try:
                 Matches=re.findall(strSearchPattern,strInputText,re.M|re.I)
                 return Matches
@@ -47,5 +43,12 @@ class StringHelper():
                 print ('Error !!!!! %s' % error)
 
         
-
+        def saveListInTextFile(self, filename, stringList ):
+            try:
+                text_file = open(filename, "w")
+                for string in stringList:
+                    text_file.write("%s\n" % string)
+                text_file.close()
+            except Exception as error:
+                print('Error !!!!! %s' % error)
 
