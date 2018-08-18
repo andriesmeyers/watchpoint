@@ -29,7 +29,7 @@ $result = $mysqli->query($sql_query);
           <h4 class="card-text"><?php echo $row['Name']; ?></h4>
         </div>
         <div class="card-footer">
-          <a href='category.php<?php echo "?category=" . $row['Name']; ?>' class="btn btn-primary">Prijzen</a>
+          <a href='category.php<?php echo "?category=" . urlencode($row['Name']); ?>' class="btn btn-primary">Prijzen</a>
         </div>
       </div>
     </div>
