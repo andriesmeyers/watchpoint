@@ -16,48 +16,95 @@ class DBOperation():
 
             # Get Category
             if dicData['Categories']:
+                category = dicData['Categories'][0].get_text().replace("'", r"\'")
+
                 query = ("INSERT IGNORE INTO Category "
-                    "SET Name = '%s'" % (dicData['Categories'][0].get_text()))
+                    "SET Name = '%s'" % (category))
                 cursor.execute(query)
                 query = ("SELECT Id FROM Category "
-                    "WHERE Name = '%s'" % (dicData['Categories'][0].get_text()))
+                    "WHERE Name = '%s'" % (category))
                 cursor.execute(query)
                 result_set = cursor.fetchone()
                 Category_Id = result_set[0]
-
-            # Insert Product
-            query = ("INSERT INTO Product "
-               "(EAN, Name, Image_URL, Category_Id) "
-               "VALUES ('%s', '%s', '%s', '%d')" 
-               % (
-                   dicData['EAN'],
-                   dicData['ProductName'],
-                   dicData['ImageURL'],
-                   Category_Id
+            try: 
+                # Insert Product
+                query = ("INSERT INTO Product "
+                "(EAN, Name, Image_URL, Category_Id) "
+                "VALUES ('%s', '%s', '%s', '%d')" 
+                % (
+                    dicData['EAN'],
+                    dicData['ProductName'],
+                    dicData['ImageURL'],
+                    Category_Id
+                    )
                 )
-            )
-            cursor.execute(query)
+                cursor.execute(query)
+            except Exception as err:
+                # Update prices on duplicate entry
+                if "Duplicate entry" in str(err):
+                    print("Product already exists. Updating prices")
 
+                    # # TODO: Create generic method
+                    # # Update Bol
+                    # if dicData['BolPrice']:
+                    #     query = ("UPDATE Price "
+                    #             "SET Value = %s "
+                    #             "WHERE shop_Id = 1 AND Product_EAN = '%s'" % (dicData['BolPrice'], dicData['EAN']))
+                        
+                    #     cursor.execute(query)
+
+                    # # Update Krefel
+                    # if dicData['KrefelPrice']:
+                    #     query = ("UPDATE Price "
+                    #             "SET Value = %s "
+                    #             "WHERE shop_Id = 2 AND Product_EAN = '%s'" % (dicData['KrefelPrice'], dicData['EAN']))
+
+                    #     cursor.execute(query)
+                    
+                    # cursor.execute(query)
+
+                    # # Update Megekko
+                    # if dicData['MegekkoPrice']:
+                    #     query = ("UPDATE Price "
+                    #         "SET Value = %s "
+                    #         "WHERE shop_Id = 3 AND Product_EAN = '%s'" % (dicData['MegekkoPrice'], dicData['EAN']))
+                    #     cursor.execute(query)
+
+                    # # Update Art & Craft
+                    # if dicData['ArtandCraftPrice']:
+                    #     print(dicData['ArtandCraftPrice'])
+                    #     query = ("UPDATE Price "
+                    #             "SET Value = %s "
+                    #             "WHERE shop_Id = 4 AND Product_EAN = '%s'" % (dicData['ArtandCraftPrice'], dicData['EAN']))
+                        
+                    #     cursor.execute(query)
+                else:
+                    logger.error("Error in DBOperations:SaveDictionaryIntoMySQLDB Function: "+str(err))
+            
             # Insert Bol Price
             query = ("INSERT INTO Price "
-               "(Shop_Id, Product_EAN, Value) "
-               "VALUES (%d, '%s', %s)" 
-               % (
-                   1,
-                   dicData['EAN'],
-                   dicData['BolPrice'],
+            "(Shop_Id, Product_EAN, Value) "
+            "VALUES (%d, '%s', %s) " 
+            "ON DUPLICATE KEY UPDATE Value = %s"
+            % (
+                1,
+                dicData['EAN'],
+                dicData['BolPrice'],
+                dicData['BolPrice'],
                 )
             )
             cursor.execute(query)
 
-             # Insert Krëfel Price
+            # Insert Krëfel Price
             if dicData['KrefelPrice']:
                 query = ("INSERT INTO Price "
                 "(Shop_Id, Product_EAN, Value) "
-                "VALUES (%d, '%s', %s)" 
+                "VALUES (%d, '%s', %s) "
+                "ON DUPLICATE KEY UPDATE Value = %s"
                 % (
                     2,
                     dicData['EAN'],
+                    dicData['KrefelPrice'],
                     dicData['KrefelPrice'],
                     )
                 )
@@ -67,11 +114,28 @@ class DBOperation():
             if dicData['MegekkoPrice']:
                 query = ("INSERT INTO Price "
                 "(Shop_Id, Product_EAN, Value) "
-                "VALUES (%d, '%s', %s)" 
+                "VALUES (%d, '%s', %s) " 
+                "ON DUPLICATE KEY UPDATE Value = %s"
                 % (
                     3,
                     dicData['EAN'],
                     dicData['MegekkoPrice'],
+                    dicData['MegekkoPrice'],
+                    )
+                )
+                cursor.execute(query)
+                
+            # Insert Art & Craft Price
+            if dicData['ArtandCraftPrice']:
+                query = ("INSERT INTO Price "
+                "(Shop_Id, Product_EAN, Value) "
+                "VALUES (%d, '%s', %s) " 
+                "ON DUPLICATE KEY UPDATE Value = %s"
+                % (
+                    4,
+                    dicData['EAN'],
+                    dicData['ArtandCraftPrice'],
+                    dicData['ArtandCraftPrice'],
                     )
                 )
                 cursor.execute(query)
@@ -79,19 +143,10 @@ class DBOperation():
             cnx.commit()
             cursor.close()
             cnx.close()
+
         except Exception as err:
-            # Update prices on duplicate entry
             if "Duplicate entry" in str(err):
-                print("Product already exists.")
-                # print("Product already exists. Updating prices...")
-                # cnx = mysql.connector.connect(user='root', password='secret', host='127.0.0.1', database='watchpoint',use_pure=False)
-                # cursor = cnx.cursor()
-                # query = ("UPDATE PriceComparisonBetweenSites "
-                #             "SET Title = '%s' , Price = '%s', KreFelPrice = '%s', MegekkoPrice = '%s' "
-                #             "WHERE EAN = %s" % (dicData[0], dicData[2], dicData[3], dicData[4], dicData[1]))
-                # cursor.execute(query)
-                # cnx.commit()
-                # cursor.close()
-                # cnx.close()
+                ## dismiss
+                pass
             else:
                 logger.error("Error in DBOperations:SaveDictionaryIntoMySQLDB Function: "+str(err))

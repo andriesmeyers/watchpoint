@@ -13,7 +13,7 @@ import json
 import io
 import os
 import sys
-# from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup
 
 #Call Function here
 try:
@@ -29,14 +29,18 @@ try:
     ResponseCookie=""
     redirectionURL=""
     objProxy=Proxy.Proxy.GetProxy(False,"","","",0,"",123)
+    # itemURL=str("https://www.artencraft.be/nl/zoeken/?text=0018208949021")
+    # response=HttpRequest.HttpGetRequest(itemURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
 
-    itemURL=str("https://api.krefel.be/api/v2/krefel/products/search?fields=FULL&query="+"190198045652"+"&currentPage=0&pageSize=1000")
-    response=HttpRequest.HttpGetRequest(itemURL,"GET","",Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
+    # document = BeautifulSoup(response[0], 'html.parser')
+    # products = document.findAll("ul", {"class": "product-overview"})
+    # product = products[0].find("strong", {"class": "product-price"}).get_text()
+    # print(product.replace('€', ''))
 
-    data=json.loads(str(response[0]))
-    match=False
-    if len(data['products']) > 0:
-        print(data['products'][0]['price']['value'])
+    # # match=False
+
+    # # if len(data['products']) > 0:
+    # #     print(data['products'][0]['price']['value'])
     
 except Exception as error:
             exc_type, exc_obj, exc_tb = sys.exc_info()

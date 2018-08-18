@@ -101,8 +101,6 @@ try:
                 if ProductCount is not None:    
                     ProductCount = (str).replace(ProductCount,"resultaten","").strip()
                     ProductCount = (str).replace(ProductCount,".","").strip()
-                    print(ProductCount)
-                    print(type(ProductCount))
                     ProductCount = int(ProductCount)
                     print("\nScraping category: %s\n" % (subCategory))
 

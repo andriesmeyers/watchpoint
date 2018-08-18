@@ -13,43 +13,60 @@ from bs4 import BeautifulSoup
 
 class RegularExpressionParser():
     def GetParseData(self,strResponse):
-            try:
-                ObjStringUtil=StringHelper.StringHelper()
-                
-                document = BeautifulSoup(strResponse, 'html.parser')
-                ProductName = ObjStringUtil.GetStringResult(strResponse, r"<title>(?P<value>[\s\S]*?)</title>");
-                ProductName=str.replace(ProductName,"bol.com |","")
-                EAN = ObjStringUtil.GetStringResult(strResponse, r"data-ean=\"(?P<value>[\s\S]*?)\"");
-                Price = ObjStringUtil.GetStringResult(strResponse, r"\"price\":(?P<value>[\s\S]*?),\"");
-                ImageURL = ObjStringUtil.GetStringResult(strResponse, r"data-zoom-src=\"(?P<value>[\s\S]*?)\"");
-                
-                Categories = document.findAll("li", {"class": "specs__category"})
-                
-                # Get Price from Krëfel
-                KrefelPrice = self.MatchBolwithKrefelByEAN(EAN)
-                if not KrefelPrice:
-                    KreFelPrice=self.MatchBolwithKrefelByProdName(ProductName)
+        try:
+            ObjStringUtil=StringHelper.StringHelper()
+            
+            document    = BeautifulSoup(strResponse, 'html.parser')
+            ProductName = ObjStringUtil.GetStringResult(strResponse, r"<title>(?P<value>[\s\S]*?)</title>");
+            ProductName = str.replace(ProductName,"bol.com |","")
+            EAN         = ObjStringUtil.GetStringResult(strResponse, r"data-ean=\"(?P<value>[\s\S]*?)\"");
+            Price       = ObjStringUtil.GetStringResult(strResponse, r"\"price\":(?P<value>[\s\S]*?),\"");
+            ImageURL    = ObjStringUtil.GetStringResult(strResponse, r"data-zoom-src=\"(?P<value>[\s\S]*?)\"");
+            Categories  = document.findAll("li", {"class": "specs__category"})
 
-                # Get Price from Megekko
-                MegekkoPrice = self.MatchBolwithMegekkoByEAN(EAN)
-                if not MegekkoPrice:
-                    MegekkoPrice = self.MatchBolwithMegekkoByProdName(ProductName)
+            # Get Price from Krëfel
+            print("\nScraping Krëfel")
 
-                dicData = { 
-                    'ProductName': ProductName,
-                    'EAN': EAN,
-                    'BolPrice': Price, 
-                    'KrefelPrice': KreFelPrice,
-                    'MegekkoPrice': MegekkoPrice, 
-                    'ImageURL': ImageURL,
-                    'Categories': Categories
-                }
+            KreFelPrice = self.MatchBolwithKrefelByEAN(EAN)
+            if not KreFelPrice:
+                KreFelPrice = self.MatchBolwithKrefelByProdName(ProductName)
+            
+            if KreFelPrice:
+                print('Price found: %s' % KreFelPrice)
 
-                return dicData
+            # Get Price from Megekko
+            print("\nScraping Megekko")
 
-            except Exception as error:
-                logger.error("Error in RegularExpressionParser File: "+str(error))
-                #print ('Error !!!!! %s' % error)
+            MegekkoPrice = self.MatchBolwithMegekkoByEAN(EAN)
+            if not MegekkoPrice:
+                MegekkoPrice = self.MatchBolwithMegekkoByProdName(ProductName)
+
+            if MegekkoPrice:
+                print('Price found: %s' % MegekkoPrice)
+
+            # Get Price from Megekko
+            print("\nScraping Art & Craft")
+            
+            ArtandCraftPrice = self.MatchBolwithArtandCraftByEAN(EAN)
+
+            if ArtandCraftPrice:
+                print('Price found: %s' % ArtandCraftPrice)
+
+            print('\n')
+            dicData = { 
+                'ProductName': ProductName,
+                'EAN': EAN,
+                'BolPrice': Price, 
+                'KrefelPrice': KreFelPrice,
+                'MegekkoPrice': MegekkoPrice,
+                'ArtandCraftPrice': ArtandCraftPrice, 
+                'ImageURL': ImageURL,
+                'Categories': Categories
+            }
+            return dicData
+
+        except Exception as error:
+            logger.error("Error in RegularExpressionParser File: "+str(error))
 
     def MatchBolwithKrefelByEAN(self, EAN):
             try:
@@ -84,6 +101,7 @@ class RegularExpressionParser():
                 
             except Exception as error:
                 logger.error("Error in RegularExpressionParser File: "+str(error))
+
     def MatchBolwithKrefelByProdName(self,ProductName):
             try:
                 HttpRequest=HttpHandler.HttpHandler()
@@ -109,7 +127,7 @@ class RegularExpressionParser():
                     Title=list['name']
                     Title=str.upper(Title)
                     price=list['price']['value']
-                    if Title in ProductName:
+                    if ProductName in Title:
                         match=True
                         break;
                     else:
@@ -190,7 +208,7 @@ class RegularExpressionParser():
                     Title=list['prodname']
                     Title=str.upper(Title)
                     price = list['price']
-                    if Title in ProductName:
+                    if ProductName in Title:
                         match=True
                         break;
                     else:
@@ -212,4 +230,43 @@ class RegularExpressionParser():
                 
             except Exception as error:
                 logger.error("Error in RegularExpressionParser File: "+str(error))
+                
+    def MatchBolwithArtandCraftByEAN(self, EAN):
+        try:
+            # Headers
+            HttpRequest=HttpHandler.HttpHandler()
+            HttpRequest.HttpUserAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36"
+            HttpRequest.HttpAccept="*/*"
+            HttpRequest.HttpContentType="application/x-www-form-urlencoded"
+            
+            isRedirection=True
+            Cookies=""
+            Refer=""
+            ResponseCookie=""
+            redirectionURL=""
+            objProxy=Proxy.Proxy.GetProxy(False,"","","",0,"",123)
+            
+            # Request
+            params = str("?text=" + EAN)
+            itemURL = str("https://www.artencraft.be/nl/zoeken/" + params)
+            response = HttpRequest.HttpGetRequest(itemURL,"POST",params,Cookies,Refer,ResponseCookie,isRedirection,redirectionURL,objProxy)
+            document = BeautifulSoup(response[0], 'html.parser')
+
+            match = False
+            products = document.findAll("ul", {"class": "product-overview"})
+            if products is not None and len(products) > 0:
+                price = products[0].find("strong", {"class": "product-price"}).get_text()
+                price = price.replace('€', '')
+                price = price.replace('.', '')
+                price = price.replace(',', '.')
+                price = price.replace('-', '')
+                
+                match = True
+            if match:            
+                return price
+            else: 
+                return ''
+            
+        except Exception as error:
+            logger.error("Error in RegularExpressionParser File: "+str(error))
                 
