@@ -36,8 +36,6 @@ class HttpHandler():
         verify='/etc/ssl/certs/cacert.org.pem'
         try:
             headers=self.CreateHeaders()
-            #if PostDetail:
-                #postData=self.CreatePostData(PostDetail)
             if not objProxy==None:
                 if(str(objConfig.Config.UseProxy).upper()=="TRUE"):
                     if(len(objProxy)>0):
