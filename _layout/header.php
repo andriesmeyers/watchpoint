@@ -1,32 +1,32 @@
-<?php
-  require('_layout/head.php');
-?>
 <header>
+<?php 
+$mysqli = $db->getConnection(); 
+$sql_query = 
+  "SELECT * FROM Category "
+  . "WHERE Parent_Id IS NULL";
+
+$result = $mysqli->query($sql_query);
+?>
 <div class="container">
     <div class="logo-wrapper">
         <a id="logo" class="header-brand" href="index.php">
             <img src="./styles/images/logo.png" height="30" alt="watchpoint">
         </a>
     </div>
+    <nav class="nav navbar">
+        <ul>
+            <li class="nav-item"><a href="index.php">Home</a></li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Categorieën</a>
+              <div class="dropdown-menu">
+                <?php while ($row = $result->fetch_assoc()){ ?>
+                  <a class="dropdown-item" href="categories.php<?php echo "?category=" . urlencode($row['Name']); ?>"><?php echo $row['Name'];?></a>
+                <?php } ?>
+              </div>
+            </li>
+        </ul>
+    </nav>
 </div>
 </header>  
-<nav>
-<nav class="disable-animation">
-    <ul>
-        <li class="simple-list">
-            <a href="shop.html">Products</a><i class="fa fa-chevron-down"></i>
-            <div class="submenu" style="display: none; opacity: 1;">
-                <ul class="simple-menu-list-column">
-                    <li><a href="shop.html"><i class="fa fa-angle-right"></i>Shop</a></li>
-                    <li><a href="product.html"><i class="fa fa-angle-right"></i>Product</a></li>
-                    <li><a href="product-nosidebar.html"><i class="fa fa-angle-right"></i>No Sidebar</a></li>
-                    <li><a href="product-tabnosidebar.html"><i class="fa fa-angle-right"></i>Tab No Sidebar</a></li>
-                </ul>
-            </div>
-        </li>
-    </ul>
-    <div class="clear"></div>
-
-</nav>
 
 

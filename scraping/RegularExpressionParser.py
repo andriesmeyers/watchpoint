@@ -1,10 +1,14 @@
 import re
-import logging as logger
+import sys
+import os
+import logging
 import pandas as objPandas
 import StringHelper
 import DBOperation
 import json
 import urllib
+import time
+from multiprocessing import Process, Manager
 from http.client import HTTPConnection
 from http.client import HTTPSConnection
 import HttpHandler
@@ -12,64 +16,145 @@ import Proxy
 from bs4 import BeautifulSoup
 
 class RegularExpressionParser():
-    def GetParseData(self,strResponse):
+    
+    def GetParseData(self,strResponse, productURL):
         try:
             ObjStringUtil=StringHelper.StringHelper()
-            
             document    = BeautifulSoup(strResponse, 'html.parser')
-            ProductName = ObjStringUtil.GetStringResult(strResponse, r"<title>(?P<value>[\s\S]*?)</title>");
+            manager     = Manager()
+            ProductName = ObjStringUtil.GetStringResult(strResponse, r"<title>(?P<value>[\s\S]*?)</title>")
             ProductName = str.replace(ProductName,"bol.com |","")
-            EAN         = ObjStringUtil.GetStringResult(strResponse, r"data-ean=\"(?P<value>[\s\S]*?)\"");
+            EAN         = ObjStringUtil.GetStringResult(strResponse, r"data-ean=\"(?P<value>[\s\S]*?)\"")
             Price       = ObjStringUtil.GetStringResult(strResponse, r"\"price\":(?P<value>[\s\S]*?),\"");
-            ImageURL    = ObjStringUtil.GetStringResult(strResponse, r"data-zoom-src=\"(?P<value>[\s\S]*?)\"");
+            Price       = Price.replace('.', '')
+            Price       = Price.replace(',', '.')
+            Price       = Price.replace('-', '')
+            ImageURL    = ObjStringUtil.GetStringResult(strResponse, r"data-zoom-src=\"(?P<value>[\s\S]*?)\"")
+            SpecTitles  = ObjStringUtil.GetArrayListWithRegex(strResponse, r"class=\"specs__title\">(?P<value>[\s\S]*?)<")
+            SpecValues  = ObjStringUtil.GetArrayListWithRegex(strResponse, r"class=\"specs__value\">(?P<value>[\s\S]*?)<")
             Categories  = document.findAll("li", {"class": "specs__category"})
-
-            # Get Price from Krëfel
-            print("\nScraping Krëfel")
-
-            KreFelPrice = self.MatchBolwithKrefelByEAN(EAN)
-            if not KreFelPrice:
-                KreFelPrice = self.MatchBolwithKrefelByProdName(ProductName)
+            Description = document.findAll("div", {"class": "product-description"})
+            dicSpecs    = {}
             
-            if KreFelPrice:
-                print('Price found: %s' % KreFelPrice)
-
-            # Get Price from Megekko
-            print("\nScraping Megekko")
-
-            MegekkoPrice = self.MatchBolwithMegekkoByEAN(EAN)
-            if not MegekkoPrice:
-                MegekkoPrice = self.MatchBolwithMegekkoByProdName(ProductName)
-
-            if MegekkoPrice:
-                print('Price found: %s' % MegekkoPrice)
-
-            # Get Price from Megekko
-            print("\nScraping Art & Craft")
+            for i in range(len(SpecTitles)):
+                title = SpecTitles[i].strip()
+                # Skip categorieën
+                if(title == "Categorie&euml;n"):
+                    break
+                value = SpecValues[i].strip()
+                dicSpecs[title] = value
+            if Description:
+                Description = Description[0].encode_contents()
+                Description = str.replace(Description.decode("utf-8") ,"'","\\n")
             
-            ArtandCraftPrice = self.MatchBolwithArtandCraftByEAN(EAN)
+            dicBol = {
+                "price": Price,
+                "url": productURL
+            }
+            dicKrefel = manager.dict()
+            dicMegekko = manager.dict()
+            dicArtnCraft = manager.dict()
+            
+            # 
+            # Multiprocessing
+            #
+         
+            krefelProcess = Process(target=self.FetchDicKrefel, args=(EAN, ProductName, dicKrefel))
+            megekkoProcess = Process(target=self.FetchDicMegekko, args=(EAN, ProductName, dicMegekko))
+            artnCraftProcess = Process(target=self.FetchDicArtnCraft, args=(EAN, ProductName, dicArtnCraft))
+            
+            # start processes
+            krefelProcess.start()
+            megekkoProcess.start()
+            artnCraftProcess.start()
 
-            if ArtandCraftPrice:
-                print('Price found: %s' % ArtandCraftPrice)
+            # wait for processes to complete
+            krefelProcess.join()
+            megekkoProcess.join()
+            artnCraftProcess.join()
 
-            print('\n')
+            krefelProcess.close()
+            megekkoProcess.close()
+            artnCraftProcess.close()
+
             dicData = { 
                 'ProductName': ProductName,
                 'EAN': EAN,
-                'BolPrice': Price, 
-                'KrefelPrice': KreFelPrice,
-                'MegekkoPrice': MegekkoPrice,
-                'ArtandCraftPrice': ArtandCraftPrice, 
+                'Description': Description,
+                'Specs': dicSpecs,
+                'Bol': dicBol,
+                'Krefel': dicKrefel['value'],
+                'Megekko': dicMegekko['value'],
+                'ArtandCraft': dicArtnCraft['value'],
                 'ImageURL': ImageURL,
                 'Categories': Categories
             }
             return dicData
 
         except Exception as error:
-            logger.error("Error in RegularExpressionParser File: "+str(error))
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            logging.error('Error in RegularExpressionParser file!'+str(error.args))
+            logging.error('Line number: '+ str(exc_tb.tb_lineno))
+
+    def FetchDicKrefel(self, EAN, ProductName, dic):
+        try:
+            # Get Price from Krëfel
+            print("\nScraping Krëfel")
+            
+            dicKrefel = self.MatchBolwithKrefelByEAN(EAN)
+
+            if dicKrefel is None:
+                dicKrefel = self.MatchBolwithKrefelByProdName(ProductName)
+            
+            if dicKrefel is not None:
+                print('Price found for Krefel: € %s' % dicKrefel["price"])
+            
+            dic['value'] = dicKrefel
+        except Exception as error:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            logging.error("Error in RegularExpressionParser File: "+str(error.args))
+            logging.error('Line number: '+ str(exc_tb.tb_lineno))
+
+    def FetchDicMegekko(self, EAN, ProductName, dic):
+        try:
+            # Get Price from Megekko
+            print("\nScraping Megekko")
+        
+            dicMegekko = self.MatchBolwithMegekkoByEAN(EAN)
+        
+            if dicMegekko is None:
+                dicMegekko = self.MatchBolwithMegekkoByProdName(ProductName)
+
+            if dicMegekko is not None:
+                print('Price found for Megekko: € %s' % dicMegekko["price"])
+            
+            dic['value'] = dicMegekko   
+        except Exception as error:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            logging.error("Error in RegularExpressionParser File: "+str(error.args))
+            logging.error('Line number: '+ str(exc_tb.tb_lineno))
+
+    def FetchDicArtnCraft(self, EAN, ProductName, dic):
+        try:
+           
+            # Get Price from Art & Craft
+            print("\nScraping Art & Craft")
+            
+            dicArtnCraft = self.MatchBolwithArtandCraftByEAN(EAN)
+
+            if dicArtnCraft is not None:
+                print('Price found for Art & Craft: € %s' % dicArtnCraft["price"])
+            
+            dic['value'] = dicArtnCraft
+        except Exception as error:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            logging.error("Error in RegularExpressionParser File: "+str(error.args))
+            logging.error('Line number: '+ str(exc_tb.tb_lineno))
 
     def MatchBolwithKrefelByEAN(self, EAN):
             try:
+                dicKrefel = {}
                 # Headers
                 HttpRequest=HttpHandler.HttpHandler()
                 HttpRequest.HttpUserAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36"
@@ -91,19 +176,22 @@ class RegularExpressionParser():
 
                 match = False
                 if len(data['products']) > 0:
-                    price = data['products'][0]['price']['value']
+                    dicKrefel['price'] = data['products'][0]['price']['value']
+                    dicKrefel['url'] = "https://www.krefel.be/" + data['products'][0]['url']
                     match = True
                 
                 if match:
-                    return price
+                    return dicKrefel
                 else: 
-                    return ''
+                    return None
                 
             except Exception as error:
-                logger.error("Error in RegularExpressionParser File: "+str(error))
-
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                logging.error("Error in RegularExpressionParser File: "+str(error.args))
+                logging.error('Line number: '+ str(exc_tb.tb_lineno))
     def MatchBolwithKrefelByProdName(self,ProductName):
             try:
+                dicKrefel = {}
                 HttpRequest=HttpHandler.HttpHandler()
                 HttpRequest.HttpUserAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36"
                 HttpRequest.HttpAccept="text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
@@ -124,9 +212,10 @@ class RegularExpressionParser():
                 ProductName=str.upper(ProductName)
                 match = False
                 for list in objResponse['products']:
-                    Title=list['name']
-                    Title=str.upper(Title)
-                    price=list['price']['value']
+                    Title = list['name']
+                    Title = str.upper(Title)
+                    dicKrefel["price"] = list['price']['value']
+                    dicKrefel["url"] = "https://www.krefel.be/" + list['url']
                     if ProductName in Title:
                         match=True
                         break;
@@ -142,15 +231,20 @@ class RegularExpressionParser():
                             match=True
                             break;
                 if match:
-                    return price
+                    return dicKrefel
                 else: 
-                    return ''
+                    return None
                 
             except Exception as error:
-                logger.error("Error in RegularExpressionParser File: "+str(error))
-
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                logging.error("Error in RegularExpressionParser File: "+str(error.args))
+                logging.error('Line number: '+ str(exc_tb.tb_lineno))
     def MatchBolwithMegekkoByEAN(self, EAN):
             try:
+                dicMegekko = {
+                    'price': '',
+                    'url': ''
+                }
                 # Headers
                 HttpRequest=HttpHandler.HttpHandler()
                 HttpRequest.HttpUserAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36"
@@ -172,17 +266,21 @@ class RegularExpressionParser():
                 
                 match=False
                 if data['aantal'] > 0:
-                    price = data['zoek'][0]['price']
+                    dicMegekko["price"] = data['zoek'][0]['price']
+                    dicMegekko["url"] = "https://www.megekko.nl" + data['zoek'][0]['link'].strip()
                     match = True
                 if match:            
-                    return price
+                    return dicMegekko
                 else: 
-                    return ''
+                    return None
                 
             except Exception as error:
-                logger.error("Error in RegularExpressionParser File: "+str(error))
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                logging.error("Error in RegularExpressionParser File: "+str(error.args))
+                logging.error('Line number: '+ str(exc_tb.tb_lineno))
     def MatchBolwithMegekkoByProdName(self,ProductName):
             try:
+                dicMegekko = {}
                 # Headers
                 HttpRequest=HttpHandler.HttpHandler()
                 HttpRequest.HttpUserAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36"
@@ -203,11 +301,12 @@ class RegularExpressionParser():
                 data = json.loads(str(response[0]))
                 
                 ProductName=str.upper(ProductName)
-                match=False
+                match = False
                 for list in data['zoek']:
                     Title=list['prodname']
                     Title=str.upper(Title)
-                    price = list['price']
+                    dicMegekko['price'] = list['price']
+                    dicMegekko['url'] = "https://www.megekko.nl" + list['link'].strip()
                     if ProductName in Title:
                         match=True
                         break;
@@ -223,16 +322,21 @@ class RegularExpressionParser():
                         if 100*i/length>threshold:
                             match=True
                             break;
-                if match:            
-                    return price
+                if match:         
+                    return dicMegekko
                 else: 
-                    return ''
+                    return None
                 
             except Exception as error:
-                logger.error("Error in RegularExpressionParser File: "+str(error))
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                logging.error("Error in RegularExpressionParser File: "+str(error))
+                logging.error('Line number: '+ str(exc_tb.tb_lineno))
+
                 
     def MatchBolwithArtandCraftByEAN(self, EAN):
         try:
+            dicArtnCraft = {}
+
             # Headers
             HttpRequest=HttpHandler.HttpHandler()
             HttpRequest.HttpUserAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36"
@@ -260,13 +364,17 @@ class RegularExpressionParser():
                 price = price.replace('.', '')
                 price = price.replace(',', '.')
                 price = price.replace('-', '')
-                
+                dicArtnCraft["price"] = price
+                url = products[0].find('div', {'class': 'product-data-top-wrap'}).a
+                dicArtnCraft["url"] = "https://www.artencraft.be/" + url['href']
+
                 match = True
             if match:            
-                return price
+                return dicArtnCraft
             else: 
-                return ''
+                return None
             
         except Exception as error:
-            logger.error("Error in RegularExpressionParser File: "+str(error))
-                
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            logging.error("Error in RegularExpressionParser File: "+str(error))
+            logging.error('Line number: '+ str(exc_tb.tb_lineno))

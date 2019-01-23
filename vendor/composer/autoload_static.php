@@ -6,9 +6,20 @@ namespace Composer\Autoload;
 
 class ComposerStaticInit525bac104431d0ce3113e9aac10076c6
 {
+    public static $prefixesPsr0 = array (
+        'P' => 
+        array (
+            'Pagerfanta\\' => 
+            array (
+                0 => __DIR__ . '/..' . '/pagerfanta/pagerfanta/src',
+            ),
+        ),
+    );
+
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
+            $loader->prefixesPsr0 = ComposerStaticInit525bac104431d0ce3113e9aac10076c6::$prefixesPsr0;
 
         }, null, ClassLoader::class);
     }
