@@ -19,8 +19,6 @@ class DBOperation():
             # Insert Category
             if dicData['Categories']:
                 category = dicData['Categories'][0].get_text().replace("'", r"\'")
-                print("Category:")
-                print(category)
 
                 query = ("INSERT IGNORE INTO Category "
                     "SET Name = '%s'" % (category))

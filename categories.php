@@ -45,7 +45,6 @@ try{
       $categories[$cat_name][$sub_cat_name]["Image_URL"] = reset($image);
     }
     
-
   }
 }catch(Exception $e){
   echo 'Caught exception: ' . $e->getMessage() . "\n";

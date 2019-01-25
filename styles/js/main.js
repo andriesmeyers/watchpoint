@@ -34,7 +34,6 @@
     }
     function setView(category){
         category = decodeString(category);
-        console.log(category);
         if (currentCategory != category){
             var activeItem = document.getElementsByClassName('category-' + category);
             if(activeItem.length > 0)
